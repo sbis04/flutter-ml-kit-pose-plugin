@@ -74,5 +74,5 @@ example/android/app/google-services.json
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 GoogleService-Info.plist
-.fvm/flutter_sdk
-.fvm/fvm_config.json
+
+.fvm
