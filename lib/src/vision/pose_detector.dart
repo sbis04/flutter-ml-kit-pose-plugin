@@ -29,7 +29,7 @@ class PoseDetector {
   PoseDetector(this.poseDetectorOptions);
 
   /// Process the image and returns a map where key denotes [PoseLandmark] i.e location. Value contains the info of the PoseLandmark i.e
-  Future<List<Pose>> processImage(InputImage inputImage) async {
+  Future<List<DetectedPose>> processImage(InputImage inputImage) async {
     _isOpened = true;
 
     //list pose
@@ -39,7 +39,7 @@ class PoseDetector {
       'imageData': inputImage._getImageData()
     });
 
-    List<Pose> poses = [];
+    List<DetectedPose> poses = [];
     // getting each pose
     for (final pose in result) {
       Map<PoseLandmarkType, PoseLandmark> landmarks = {};
@@ -48,7 +48,7 @@ class PoseDetector {
         final landmark = PoseLandmark._fromMap(point);
         landmarks[landmark.type] = landmark;
       }
-      poses.add(Pose(landmarks, pose['name'] ?? '', pose['accuracy'] ?? 0.0));
+      poses.add(DetectedPose(landmarks, pose['name'] ?? '', pose['accuracy'] ?? 0.0));
     }
     return poses;
   }
@@ -117,8 +117,8 @@ enum PoseLandmarkType {
   rightFootIndex
 }
 
-class Pose {
-  Pose(
+class DetectedPose {
+  DetectedPose(
     this.landmarks,
     this.name,
     this.accuracy,

@@ -8,7 +8,7 @@ import 'coordinates_translator.dart';
 class PosePainter extends CustomPainter {
   PosePainter(this.poses, this.absoluteImageSize, this.rotation);
 
-  final List<Pose> poses;
+  final List<DetectedPose> poses;
   final Size absoluteImageSize;
   final InputImageRotation rotation;
 
