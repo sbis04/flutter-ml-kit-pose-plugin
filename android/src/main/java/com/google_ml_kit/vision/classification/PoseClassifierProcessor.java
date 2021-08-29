@@ -1,8 +1,6 @@
 package com.google_ml_kit.vision.classification;
 
 import android.content.Context;
-import android.media.AudioManager;
-import android.media.ToneGenerator;
 import android.os.Looper;
 import android.util.Log;
 
@@ -11,7 +9,6 @@ import androidx.annotation.WorkerThread;
 import com.google.common.base.Preconditions;
 import com.google.mlkit.vision.pose.Pose;
 import com.google_ml_kit.vision.PoseDataStorage;
-//import com.souvikbiswas.pose_test.java.posesetector.PoseDataStorage;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,66 +18,20 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Accepts a stream of {@link Pose} for classification and Rep counting.
+ * Accepts a stream of {@link Pose} for classification
  */
 public class PoseClassifierProcessor {
     private static final String TAG = "PoseClassifierProcessor";
     private static final String POSE_SAMPLES_FILE = "pose/fitness_poses_csvs_out_all.csv";
 
-    // Specify classes for which we want rep counting.
-    // These are the labels in the given {@code POSE_SAMPLES_FILE}. You can set your own class labels
-    // for your pose samples.
-    private static final String[] POSE_CLASSES = {
-            "wall",
-            "cobra",
-            "tree",
-            "seatedWideAngle",
-            "bridge",
-            "triangle2",
-            "widebend",
-            "warrior2",
-            "HalfMoon",
-            "triangle1",
-            "downwarddog",
-            "Halfspinal",
-            "headtoknee",
-            "forwardBend",
-            "child",
-            "camel",
-            "Staff",
-            "Boat",
-            "plank",
-            "chair",
-            "seatedforward",
-            "ragdol",
-            "corpse",
-            "catcow",
-            "mountain",
-            "sphinx",
-            "locust",
-            "Butterfly",
-            "cow",
-            "simple",
-            "fish",
-            "extendedtriangle"
-    };
-
-    private final boolean isStreamMode;
-
-    private EMASmoothing emaSmoothing;
-    private List<RepetitionCounter> repCounters;
+    final private EMASmoothing emaSmoothing;
     private PoseClassifier poseClassifier;
-    private String lastRepResult;
 
     @WorkerThread
-    public PoseClassifierProcessor(Context context, boolean isStreamMode) {
+    public PoseClassifierProcessor(Context context) {
         Preconditions.checkState(Looper.myLooper() != Looper.getMainLooper());
-        this.isStreamMode = isStreamMode;
-        if (isStreamMode) {
-            emaSmoothing = new EMASmoothing();
-            repCounters = new ArrayList<>();
-            lastRepResult = "";
-        }
+        emaSmoothing = new EMASmoothing();
+
         loadPoseSamples(context);
     }
 
@@ -102,11 +53,6 @@ public class PoseClassifierProcessor {
             Log.e(TAG, "Error when loading pose samples.\n" + e);
         }
         poseClassifier = new PoseClassifier(poseSamples);
-        if (isStreamMode) {
-            for (String className : POSE_CLASSES) {
-                repCounters.add(new RepetitionCounter(className));
-            }
-        }
     }
 
     /**
@@ -114,39 +60,18 @@ public class PoseClassifierProcessor {
      * classification results.
      *
      * <p>Currently it returns up to 2 strings as following:
-     * 0: PoseClass : X reps
      * 1: PoseClass : [0.0-1.0] confidence
      */
     @WorkerThread
     public List<String> getPoseResult(Pose pose) {
         Preconditions.checkState(Looper.myLooper() != Looper.getMainLooper());
         List<String> result = new ArrayList<>();
+
         ClassificationResult classification = poseClassifier.classify(pose);
+        classification = emaSmoothing.getSmoothedResult(classification);
 
-        // Update {@link RepetitionCounter}s if {@code isStreamMode}.
-        if (isStreamMode) {
-            // Feed pose to smoothing even if no pose found.
-            classification = emaSmoothing.getSmoothedResult(classification);
-
-            // Return early without updating repCounter if no pose found.
-            if (pose.getAllPoseLandmarks().isEmpty()) {
-                result.add(lastRepResult);
-                return result;
-            }
-
-            for (RepetitionCounter repCounter : repCounters) {
-                int repsBefore = repCounter.getNumRepeats();
-                int repsAfter = repCounter.addClassificationResult(classification);
-                if (repsAfter > repsBefore) {
-                    // Play a fun beep when rep counter updates.
-                    ToneGenerator tg = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100);
-                    tg.startTone(ToneGenerator.TONE_PROP_BEEP);
-                    lastRepResult = String.format(
-                            Locale.US, "%s : %d reps", repCounter.getClassName(), repsAfter);
-                    break;
-                }
-            }
-//      result.add(lastRepResult);
+        if (pose.getAllPoseLandmarks().isEmpty()) {
+            return result;
         }
 
         // Add maxConfidence class of current frame to result if pose is found.
@@ -161,25 +86,6 @@ public class PoseClassifierProcessor {
             // -----------------------------------------------------------------------------------
             //
             PoseDataStorage.setData(maxConfidenceClass, Double.parseDouble(String.format(Locale.US, "%.2f", poseAccuracy)));
-
-//      MainActivity.listeners.put(listener, new Runnable() {
-//        @Override
-//        public void run() {
-//          if (MainActivity.listeners.containsKey(listener)) {
-//            // Send some value to callback
-//            emitter.success("Hello listener! " + (System.currentTimeMillis() / 1000));
-//            handler.postDelayed(this, 1000);
-//          }
-//        }
-//      });
-
-            String maxConfidenceClassResult = String.format(
-                    Locale.US,
-                    "%s : %.2f confidence",
-                    maxConfidenceClass,
-                    classification.getClassConfidence(maxConfidenceClass)
-                            / poseClassifier.confidenceRange());
-//      result.add(maxConfidenceClassResult);
         }
 
         return result;

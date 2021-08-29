@@ -174,7 +174,7 @@ public class PoseDetector implements ApiDetectorInterface {
                             List<String> classificationResult = new ArrayList<>();
 
                             if (poseClassifierProcessor == null) {
-                                poseClassifierProcessor = new PoseClassifierProcessor(context, true);
+                                poseClassifierProcessor = new PoseClassifierProcessor(context);
                             }
 
                             classificationResult = poseClassifierProcessor.getPoseResult(pose);
