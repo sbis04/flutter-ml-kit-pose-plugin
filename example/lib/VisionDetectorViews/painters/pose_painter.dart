@@ -30,8 +30,8 @@ class PosePainter extends CustomPainter {
       ..color = Colors.blueAccent;
 
     poses.forEach((pose) {
+      print('FF_POSE: ${pose.pose}, FF_ACCURACY: ${pose.accuracy}');
       pose.landmarks.forEach((_, landmark) {
-        print('FF_POSE: ${landmark.pose}, FF_ACCURACY: ${landmark.accuracy}');
         canvas.drawCircle(
             Offset(
               translateX(landmark.x, rotation, size, absoluteImageSize),

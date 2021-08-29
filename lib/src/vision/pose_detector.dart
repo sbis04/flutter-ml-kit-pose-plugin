@@ -32,6 +32,7 @@ class PoseDetector {
   Future<List<Pose>> processImage(InputImage inputImage) async {
     _isOpened = true;
 
+    //list pose
     final result = await Vision.channel
         .invokeMethod('vision#startPoseDetector', <String, dynamic>{
       'options': poseDetectorOptions._detectorOption(),
@@ -39,13 +40,15 @@ class PoseDetector {
     });
 
     List<Pose> poses = [];
+    // getting each pose
     for (final pose in result) {
       Map<PoseLandmarkType, PoseLandmark> landmarks = {};
-      for (final point in pose) {
+      // getting each landmark point
+      for (final point in pose['landmarks']) {
         final landmark = PoseLandmark._fromMap(point);
         landmarks[landmark.type] = landmark;
       }
-      poses.add(Pose(landmarks));
+      poses.add(Pose(landmarks, pose['pose'] ?? '', pose['accuracy'] ?? 0.0));
     }
     return poses;
   }
@@ -115,9 +118,23 @@ enum PoseLandmarkType {
 }
 
 class Pose {
-  Pose(this.landmarks);
+  Pose(
+    this.landmarks,
+    this.pose,
+    this.accuracy,
+  );
 
   final Map<PoseLandmarkType, PoseLandmark> landmarks;
+  final String pose;
+  final double accuracy;
+
+  // factory Pose._fromMap(Map<dynamic, dynamic> data) {
+  //   return Pose(
+  //     data['landmarks'],
+  //     data['pose'] ?? '',
+  //     data['accuracy'] ?? 0.0,
+  //   );
+  // }
 }
 
 /// This gives the [Offset] information as to where pose landmarks are locates in image.
@@ -128,8 +145,6 @@ class PoseLandmark {
     this.y,
     this.z,
     this.likelihood,
-    this.pose,
-    this.accuracy,
   );
 
   final PoseLandmarkType type;
@@ -146,10 +161,6 @@ class PoseLandmark {
   /// Gives the likelihood of this landmark being in the image frame.
   final double likelihood;
 
-  final String pose;
-
-  final double accuracy;
-
   factory PoseLandmark._fromMap(Map<dynamic, dynamic> data) {
     return PoseLandmark(
       PoseLandmarkType.values[data['type']],
@@ -157,8 +168,6 @@ class PoseLandmark {
       data['y'],
       data['z'],
       data['likelihood'] ?? 0.0,
-      data['pose'] ?? '',
-      data['accuracy'] ?? 0.0,
     );
   }
 }

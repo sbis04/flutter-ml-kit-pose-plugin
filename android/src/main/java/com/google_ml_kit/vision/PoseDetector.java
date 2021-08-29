@@ -129,8 +129,11 @@ public class PoseDetector implements ApiDetectorInterface {
                 .addOnSuccessListener(
 //                        classificationExecutor,
                         (OnSuccessListener<Pose>) pose -> {
-                            List<List<Map<String, Object>>> array = new ArrayList<>();
+//                            List<List<Map<String, Object>>> array = new ArrayList<>();
+                            List<Map<String, Object>> poseList = new ArrayList<>();
+
                             if (!pose.getAllPoseLandmarks().isEmpty()) {
+                                Map<String, Object> poseMap = new HashMap<String, Object>();
                                 List<Map<String, Object>> landmarks = new ArrayList<>();
                                 for (PoseLandmark poseLandmark : pose.getAllPoseLandmarks()) {
                                     Map<String, Object> landmarkMap = new HashMap<>();
@@ -139,10 +142,13 @@ public class PoseDetector implements ApiDetectorInterface {
                                     landmarkMap.put("y", poseLandmark.getPosition3D().getY());
                                     landmarkMap.put("z", poseLandmark.getPosition3D().getZ());
                                     landmarkMap.put("likelihood", poseLandmark.getInFrameLikelihood());
-                                    landmarkMap.put("pose", PoseDataStorage.getPose());
-                                    landmarkMap.put("accuracy", PoseDataStorage.getAccuracy());
+                                    // landmarkMap.put("pose", PoseDataStorage.getPose());
+                                    // landmarkMap.put("accuracy", PoseDataStorage.getAccuracy());
                                     landmarks.add(landmarkMap);
                                 }
+                                poseMap.put("landmarks", landmarks);
+                                poseMap.put("pose", PoseDataStorage.getPose());
+                                poseMap.put("accuracy", PoseDataStorage.getAccuracy());
 //                                List<String> classificationResult = new ArrayList<>();
 //
 //                                if (poseClassifierProcessor == null) {
@@ -150,9 +156,9 @@ public class PoseDetector implements ApiDetectorInterface {
 //                                }
 //                                classificationResult = poseClassifierProcessor.getPoseResult(pose);
 //                                Log.i("POSE CLASSIFIER", classificationResult.get(0));
-                                array.add(landmarks);
+                                poseList.add(poseMap);
                             }
-                            result.success(array);
+                            result.success(poseList);
                         })
                 .addOnFailureListener(
                         new OnFailureListener() {
