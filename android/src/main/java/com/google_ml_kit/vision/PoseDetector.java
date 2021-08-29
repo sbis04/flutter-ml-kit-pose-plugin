@@ -147,7 +147,7 @@ public class PoseDetector implements ApiDetectorInterface {
                                     landmarks.add(landmarkMap);
                                 }
                                 poseMap.put("landmarks", landmarks);
-                                poseMap.put("pose", PoseDataStorage.getPose());
+                                poseMap.put("name", PoseDataStorage.getPose());
                                 poseMap.put("accuracy", PoseDataStorage.getAccuracy());
 //                                List<String> classificationResult = new ArrayList<>();
 //

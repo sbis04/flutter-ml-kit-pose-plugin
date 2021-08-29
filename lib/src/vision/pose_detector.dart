@@ -48,7 +48,7 @@ class PoseDetector {
         final landmark = PoseLandmark._fromMap(point);
         landmarks[landmark.type] = landmark;
       }
-      poses.add(Pose(landmarks, pose['pose'] ?? '', pose['accuracy'] ?? 0.0));
+      poses.add(Pose(landmarks, pose['name'] ?? '', pose['accuracy'] ?? 0.0));
     }
     return poses;
   }
@@ -120,12 +120,12 @@ enum PoseLandmarkType {
 class Pose {
   Pose(
     this.landmarks,
-    this.pose,
+    this.name,
     this.accuracy,
   );
 
   final Map<PoseLandmarkType, PoseLandmark> landmarks;
-  final String pose;
+  final String name;
   final double accuracy;
 
   // factory Pose._fromMap(Map<dynamic, dynamic> data) {
