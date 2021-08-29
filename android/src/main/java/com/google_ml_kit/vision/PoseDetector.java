@@ -4,7 +4,6 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.pose.Pose;
@@ -26,8 +25,8 @@ import java.util.concurrent.Executors;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 
-//Detector to the pose landmarks present in a image.
-//Creates an abstraction over PoseDetector provided by ml kit.
+// Detector to the pose landmarks present in a image.
+// Creates an abstraction over PoseDetector provided by ml kit.
 public class PoseDetector implements ApiDetectorInterface {
     private static final String START = "vision#startPoseDetector";
     private static final String CLOSE = "vision#closePoseDetector";
@@ -36,7 +35,6 @@ public class PoseDetector implements ApiDetectorInterface {
     private com.google.mlkit.vision.pose.PoseDetector poseDetector;
     private PoseClassifierProcessor poseClassifierProcessor;
     private final Executor classificationExecutor;
-    private int count = 0;
 
     public PoseDetector(Context context) {
         this.context = context;
@@ -112,24 +110,8 @@ public class PoseDetector implements ApiDetectorInterface {
         }
 
         poseDetector.process(inputImage)
-//                .continueWith(
-//                        classificationExecutor,
-//                        task -> {
-//                            Pose pose = task.getResult();
-//                            List<String> classificationResult = new ArrayList<>();
-//
-//                            if (poseClassifierProcessor == null) {
-//                                poseClassifierProcessor = new PoseClassifierProcessor(context, true);
-//                            }
-//                            classificationResult = poseClassifierProcessor.getPoseResult(pose);
-//                            Log.i("POSE CLASSIFIER", classificationResult.get(0));
-//                            return new PoseWithClassification(pose, classificationResult);
-//                        }
-//                )
                 .addOnSuccessListener(
-//                        classificationExecutor,
                         (OnSuccessListener<Pose>) pose -> {
-//                            List<List<Map<String, Object>>> array = new ArrayList<>();
                             List<Map<String, Object>> poseList = new ArrayList<>();
 
                             if (!pose.getAllPoseLandmarks().isEmpty()) {
@@ -142,31 +124,16 @@ public class PoseDetector implements ApiDetectorInterface {
                                     landmarkMap.put("y", poseLandmark.getPosition3D().getY());
                                     landmarkMap.put("z", poseLandmark.getPosition3D().getZ());
                                     landmarkMap.put("likelihood", poseLandmark.getInFrameLikelihood());
-                                    // landmarkMap.put("pose", PoseDataStorage.getPose());
-                                    // landmarkMap.put("accuracy", PoseDataStorage.getAccuracy());
                                     landmarks.add(landmarkMap);
                                 }
                                 poseMap.put("landmarks", landmarks);
                                 poseMap.put("name", PoseDataStorage.getPose());
                                 poseMap.put("accuracy", PoseDataStorage.getAccuracy());
-//                                List<String> classificationResult = new ArrayList<>();
-//
-//                                if (poseClassifierProcessor == null) {
-//                                    poseClassifierProcessor = new PoseClassifierProcessor(context, true);
-//                                }
-//                                classificationResult = poseClassifierProcessor.getPoseResult(pose);
-//                                Log.i("POSE CLASSIFIER", classificationResult.get(0));
                                 poseList.add(poseMap);
                             }
                             result.success(poseList);
                         })
-                .addOnFailureListener(
-                        new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                result.error("PoseDetectorError", e.toString(), null);
-                            }
-                        })
+                .addOnFailureListener(e -> result.error("PoseDetectorError", e.toString(), null))
                 .continueWith(
                         classificationExecutor,
                         task -> {

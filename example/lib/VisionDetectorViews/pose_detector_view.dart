@@ -14,6 +14,8 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
   PoseDetector poseDetector = GoogleMlKit.vision.poseDetector();
   bool isBusy = false;
   CustomPaint? customPaint;
+  String poseName = "";
+  double poseAccuracy = 0.0;
 
   @override
   void dispose() async {
@@ -23,12 +25,34 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
 
   @override
   Widget build(BuildContext context) {
-    return CameraView(
-      title: 'Pose Detector',
-      customPaint: customPaint,
-      onImage: (inputImage) {
-        processImage(inputImage);
-      },
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            CameraView(
+              customPaint: customPaint,
+              onImage: (inputImage) {
+                processImage(inputImage);
+              },
+            ),
+            Align(
+              alignment: Alignment.topCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  '$poseName: $poseAccuracy',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 40.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -36,7 +60,12 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
     if (isBusy) return;
     isBusy = true;
     final poses = await poseDetector.processImage(inputImage);
-    print('Found ${poses.length} poses');
+
+    poses.forEach((pose) {
+      poseName = pose.name;
+      poseAccuracy = pose.accuracy;
+    });
+
     if (inputImage.inputImageData?.size != null &&
         inputImage.inputImageData?.imageRotation != null) {
       final painter = PosePainter(poses, inputImage.inputImageData!.size,
@@ -45,7 +74,9 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
     } else {
       customPaint = null;
     }
+
     isBusy = false;
+
     if (mounted) {
       setState(() {});
     }
