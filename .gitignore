@@ -76,3 +76,13 @@ example/android/app/google-services.json
 GoogleService-Info.plist
 
 .fvm
+example/android/.project
+example/android/app/.classpath
+.gitignore
+.gitignore
+example/android/.settings/org.eclipse.buildship.core.prefs
+android/.classpath
+android/.settings/org.eclipse.buildship.core.prefs
+example/android/app/.settings/org.eclipse.buildship.core.prefs
+example/android/app/.project
+android/.project
