@@ -44,20 +44,24 @@ class _CameraViewState extends State<CameraView> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double fraction =
+        _controller!.value.isInitialized ? _controller!.value.aspectRatio : 0;
+
     return _controller!.value.isInitialized
         ? Stack(
             children: [
               Container(
                 child: AspectRatio(
-                  aspectRatio: 1 / _controller!.value.aspectRatio,
+                  aspectRatio: 1 / fraction,
                   child: _controller!.buildPreview(),
                 ),
               ),
               if (widget.customPaint != null)
                 Container(
                   child: widget.customPaint!,
-                  height: _controller!.value.previewSize!.height,
-                  width: _controller!.value.previewSize!.height,
+                  height: screenWidth * fraction,
+                  width: screenWidth,
                 ),
             ],
           )
