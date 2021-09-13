@@ -93,21 +93,19 @@ public class PoseDetector implements ApiDetectorInterface {
 
         String model = (String) options.get("type");
         String mode = (String) options.get("mode");
-        int detectorMode = PoseDetectorOptions.STREAM_MODE;
-        if (mode.equals("single")) {
-            detectorMode = PoseDetectorOptions.SINGLE_IMAGE_MODE;
-        }
-        if (model.equals("base")) {
-            PoseDetectorOptions detectorOptions = new PoseDetectorOptions.Builder()
-                    .setDetectorMode(detectorMode)
-                    .build();
-            poseDetector = PoseDetection.getClient(detectorOptions);
-        } else {
-            AccuratePoseDetectorOptions detectorOptions = new AccuratePoseDetectorOptions.Builder()
-                    .setDetectorMode(detectorMode)
-                    .build();
-            poseDetector = PoseDetection.getClient(detectorOptions);
-        }
+        int detectorMode = AccuratePoseDetectorOptions.STREAM_MODE;
+
+        // Base pose detector with streaming frames, when depending on the pose-detection sdk
+//        PoseDetectorOptions detectorOptions = new PoseDetectorOptions.Builder()
+//                .setDetectorMode(detectorMode)
+//                .build();
+//        poseDetector = PoseDetection.getClient(detectorOptions);
+
+        // Accurate pose detector with streaming frames, when depending on the pose-detection-accurate sdk
+        AccuratePoseDetectorOptions detectorOptions = new AccuratePoseDetectorOptions.Builder()
+                .setDetectorMode(detectorMode)
+                .build();
+        poseDetector = PoseDetection.getClient(detectorOptions);
 
         poseDetector.process(inputImage)
                 .addOnSuccessListener(
