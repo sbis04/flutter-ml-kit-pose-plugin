@@ -14,7 +14,6 @@ dependencies:
 
   google_ml_kit:
     path: ../
-  image_picker: ^0.7.2
   camera: ^0.8.1
 
   cupertino_icons: ^1.0.2
