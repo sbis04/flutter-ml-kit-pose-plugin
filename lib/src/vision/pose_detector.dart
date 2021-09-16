@@ -29,15 +29,21 @@ class PoseDetector {
   PoseDetector(this.poseDetectorOptions);
 
   /// Process the image and returns a map where key denotes [PoseLandmark] i.e location. Value contains the info of the PoseLandmark i.e
-  Future<List<DetectedPose>> processImage(InputImage inputImage) async {
+  Future<List<DetectedPose>> processImage({
+    required InputImage inputImage,
+    required bool useClassifier,
+  }) async {
     _isOpened = true;
 
     //list pose
-    final result = await Vision.channel
-        .invokeMethod('vision#startPoseDetector', <String, dynamic>{
-      'options': poseDetectorOptions._detectorOption(),
-      'imageData': inputImage._getImageData()
-    });
+    final result = await Vision.channel.invokeMethod(
+        useClassifier
+            ? 'vision#startPoseDetectorWithCl'
+            : 'vision#startPoseDetectorWithoutCl',
+        <String, dynamic>{
+          'options': poseDetectorOptions._detectorOption(),
+          'imageData': inputImage._getImageData()
+        });
 
     List<DetectedPose> poses = [];
     // getting each pose
@@ -48,7 +54,8 @@ class PoseDetector {
         final landmark = PoseLandmark._fromMap(point);
         landmarks[landmark.type] = landmark;
       }
-      poses.add(DetectedPose(landmarks, pose['name'] ?? '', pose['accuracy'] ?? 0.0));
+      poses.add(
+          DetectedPose(landmarks, pose['name'] ?? '', pose['accuracy'] ?? 0.0));
     }
     return poses;
   }
