@@ -43,8 +43,17 @@ class Home extends StatelessWidget {
                     title: const Text("Vision"),
                     children: [
                       CustomCard(
-                        'Pose Detector',
-                        PoseDetectorView(),
+                        'Pose Detector Without Classifier',
+                        PoseDetectorView(
+                          useClassifier: false,
+                        ),
+                        featureCompleted: true,
+                      ),
+                      CustomCard(
+                        'Pose Detector With Classifier',
+                        PoseDetectorView(
+                          useClassifier: true,
+                        ),
                         featureCompleted: true,
                       ),
                     ],
