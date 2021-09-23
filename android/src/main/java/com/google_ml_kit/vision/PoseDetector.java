@@ -138,9 +138,24 @@ public class PoseDetector implements ApiDetectorInterface {
                     .addOnFailureListener(e -> result.error("PoseDetectorError", e.toString(), null));
         } else if (methodName.equals(START_WITH_CLASSIFIER)) {
             poseDetector.process(inputImage)
+                    .continueWith(
+                            classificationExecutor,
+                            task -> {
+                                Pose pose = task.getResult();
+                                List<String> classificationResult = new ArrayList<>();
+
+                                if (poseClassifierProcessor == null) {
+                                    poseClassifierProcessor = new PoseClassifierProcessor(context);
+                                }
+
+                                classificationResult = poseClassifierProcessor.getPoseResult(pose);
+                                return new PoseWithClassification(pose, classificationResult);
+                            }
+                    )
                     .addOnSuccessListener(
-                            (OnSuccessListener<Pose>) pose -> {
+                            (OnSuccessListener<PoseWithClassification>) poseWithClassification -> {
                                 List<Map<String, Object>> poseList = new ArrayList<>();
+                                final Pose pose = poseWithClassification.pose;
 
                                 if (!pose.getAllPoseLandmarks().isEmpty()) {
                                     Map<String, Object> poseMap = new HashMap<String, Object>();
@@ -160,22 +175,9 @@ public class PoseDetector implements ApiDetectorInterface {
                                     poseList.add(poseMap);
                                 }
                                 result.success(poseList);
-                            })
-                    .addOnFailureListener(e -> result.error("PoseDetectorError", e.toString(), null))
-                    .continueWith(
-                            classificationExecutor,
-                            task -> {
-                                Pose pose = task.getResult();
-                                List<String> classificationResult = new ArrayList<>();
-
-                                if (poseClassifierProcessor == null) {
-                                    poseClassifierProcessor = new PoseClassifierProcessor(context);
-                                }
-
-                                classificationResult = poseClassifierProcessor.getPoseResult(pose);
-                                return new PoseWithClassification(pose, classificationResult);
                             }
-                    );
+                    )
+                    .addOnFailureListener(e -> result.error("PoseDetectorClassifierError", e.toString(), null));
         }
 
     }
