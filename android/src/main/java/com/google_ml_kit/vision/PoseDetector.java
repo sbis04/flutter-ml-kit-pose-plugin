@@ -1,6 +1,7 @@
 package com.google_ml_kit.vision;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -13,6 +14,7 @@ import com.google.mlkit.vision.pose.accurate.AccuratePoseDetectorOptions;
 import com.google.mlkit.vision.pose.defaults.PoseDetectorOptions;
 import com.google_ml_kit.ApiDetectorInterface;
 import com.google_ml_kit.vision.classification.PoseClassifierProcessor;
+import com.google_ml_kit.vision.classification.RepetitionCounter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +33,7 @@ import io.flutter.plugin.common.MethodChannel;
 public class PoseDetector implements ApiDetectorInterface {
     private static final String START_WITHOUT_CLASSIFIER = "vision#startPoseDetectorWithoutCl";
     private static final String START_WITH_CLASSIFIER = "vision#startPoseDetectorWithCl";
+    private static final String START_ACTIVITY = "vision#startPoseDetectorActivity";
     private static final String CLOSE = "vision#closePoseDetector";
 
     private final Context context;
@@ -65,14 +68,14 @@ public class PoseDetector implements ApiDetectorInterface {
     @Override
     public List<String> getMethodsKeys() {
         return new ArrayList<>(
-                Arrays.asList(START_WITHOUT_CLASSIFIER, START_WITH_CLASSIFIER, CLOSE)
+                Arrays.asList(START_WITHOUT_CLASSIFIER, START_WITH_CLASSIFIER, START_ACTIVITY, CLOSE)
         );
     }
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
         String method = call.method;
-        if (method.equals(START_WITHOUT_CLASSIFIER) || method.equals(START_WITH_CLASSIFIER)) {
+        if (method.equals(START_WITHOUT_CLASSIFIER) || method.equals(START_WITH_CLASSIFIER) || method.equals(START_ACTIVITY)) {
             handleDetection(call, result);
         } else if (method.equals(CLOSE)) {
             closeDetector();
@@ -145,7 +148,7 @@ public class PoseDetector implements ApiDetectorInterface {
                                 List<String> classificationResult = new ArrayList<>();
 
                                 if (poseClassifierProcessor == null) {
-                                    poseClassifierProcessor = new PoseClassifierProcessor(context);
+                                    poseClassifierProcessor = new PoseClassifierProcessor(context, false);
                                 }
 
                                 classificationResult = poseClassifierProcessor.getPoseResult(pose);
@@ -178,12 +181,57 @@ public class PoseDetector implements ApiDetectorInterface {
                             }
                     )
                     .addOnFailureListener(e -> result.error("PoseDetectorClassifierError", e.toString(), null));
+        } else if(methodName.equals(START_ACTIVITY)) {
+            poseDetector.process(inputImage)
+                    .continueWith(
+                            classificationExecutor,
+                            task -> {
+                                Pose pose = task.getResult();
+                                List<String> classificationResult = new ArrayList<>();
+
+                                if (poseClassifierProcessor == null) {
+                                    poseClassifierProcessor = new PoseClassifierProcessor(context, true);
+                                }
+
+                                classificationResult = poseClassifierProcessor.getPoseResultWithReps(pose);
+                                return new PoseWithClassification(pose, classificationResult);
+                            }
+                    )
+                    .addOnSuccessListener(
+                            (OnSuccessListener<PoseWithClassification>) poseWithClassification -> {
+                                List<Map<String, Object>> poseList = new ArrayList<>();
+                                final Pose pose = poseWithClassification.pose;
+
+                                if (!pose.getAllPoseLandmarks().isEmpty()) {
+                                    Map<String, Object> poseMap = new HashMap<String, Object>();
+                                    List<Map<String, Object>> landmarks = new ArrayList<>();
+                                    for (PoseLandmark poseLandmark : pose.getAllPoseLandmarks()) {
+                                        Map<String, Object> landmarkMap = new HashMap<>();
+                                        landmarkMap.put("type", poseLandmark.getLandmarkType());
+                                        landmarkMap.put("x", poseLandmark.getPosition3D().getX());
+                                        landmarkMap.put("y", poseLandmark.getPosition3D().getY());
+                                        landmarkMap.put("z", poseLandmark.getPosition3D().getZ());
+                                        landmarkMap.put("likelihood", poseLandmark.getInFrameLikelihood());
+                                        landmarks.add(landmarkMap);
+                                    }
+                                    poseMap.put("landmarks", landmarks);
+                                    poseMap.put("name", PoseDataStorage.getPose());
+                                    poseMap.put("accuracy", PoseDataStorage.getAccuracy());
+                                    poseMap.put("reps", RepetitionCounter.numRepeats);
+                                    poseList.add(poseMap);
+                                }
+                                result.success(poseList);
+                            }
+                    )
+                    .addOnFailureListener(e -> result.error("PoseDetectorClassifierError", e.toString(), null));
         }
 
     }
 
     private void closeDetector() {
         poseDetector.close();
+        poseClassifierProcessor = null;
         PoseDataStorage.setData(null, 0.0);
+        RepetitionCounter.numRepeats = 0;
     }
 }
