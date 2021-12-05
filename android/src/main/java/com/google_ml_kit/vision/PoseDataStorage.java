@@ -3,6 +3,7 @@ package com.google_ml_kit.vision;
 public class PoseDataStorage {
     static private String pose;
     static private double accuracy;
+    static private int reps;
 
     // Getters
     static public double getAccuracy() {
@@ -11,6 +12,10 @@ public class PoseDataStorage {
 
     static public String getPose() {
         return pose;
+    }
+
+    static public int getNumReps() {
+        return reps;
     }
 
     // Setter
