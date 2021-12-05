@@ -32,14 +32,17 @@ class PoseDetector {
   Future<List<DetectedPose>> processImage({
     required InputImage inputImage,
     required bool useClassifier,
+    bool isActivity = false,
   }) async {
     _isOpened = true;
 
     //list pose
     final result = await Vision.channel.invokeMethod(
-        useClassifier
-            ? 'vision#startPoseDetectorWithCl'
-            : 'vision#startPoseDetectorWithoutCl',
+        isActivity
+            ? 'vision#startPoseDetectorActivity'
+            : useClassifier
+                ? 'vision#startPoseDetectorWithCl'
+                : 'vision#startPoseDetectorWithoutCl',
         <String, dynamic>{
           'options': poseDetectorOptions._detectorOption(),
           'imageData': inputImage._getImageData()
@@ -54,8 +57,12 @@ class PoseDetector {
         final landmark = PoseLandmark._fromMap(point);
         landmarks[landmark.type] = landmark;
       }
-      poses.add(
-          DetectedPose(landmarks, pose['name'] ?? '', pose['accuracy'] ?? 0.0));
+      poses.add(DetectedPose(
+        landmarks,
+        pose['name'] ?? '',
+        pose['accuracy'] ?? 0.0,
+        pose['reps'] ?? 0,
+      ));
     }
     return poses;
   }
@@ -129,11 +136,13 @@ class DetectedPose {
     this.landmarks,
     this.name,
     this.accuracy,
+    this.reps,
   );
 
   final Map<PoseLandmarkType, PoseLandmark> landmarks;
   final String name;
   final double accuracy;
+  final int reps;
 
   // factory Pose._fromMap(Map<dynamic, dynamic> data) {
   //   return Pose(

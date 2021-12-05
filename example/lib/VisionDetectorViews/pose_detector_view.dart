@@ -7,8 +7,12 @@ import 'painters/pose_painter.dart';
 
 class PoseDetectorView extends StatefulWidget {
   final bool useClassifier;
+  final bool isActivity;
 
-  const PoseDetectorView({required this.useClassifier});
+  const PoseDetectorView({
+    required this.useClassifier,
+    this.isActivity = false,
+  });
 
   @override
   State<StatefulWidget> createState() => _PoseDetectorViewState();
@@ -20,6 +24,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
   CustomPaint? customPaint;
   String poseName = "";
   double poseAccuracy = 0.0;
+  int poseReps = 0;
 
   @override
   void dispose() async {
@@ -40,6 +45,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
                 processImage(
                   inputImage,
                   widget.useClassifier,
+                  widget.isActivity,
                 );
               },
             ),
@@ -47,12 +53,12 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
                 ? Align(
                     alignment: Alignment.topCenter,
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(20.0),
                       child: Text(
-                        '$poseName: $poseAccuracy',
+                        '${poseReps == 0 ? '' : '($poseReps) '}$poseName: $poseAccuracy',
                         style: TextStyle(
                           color: Colors.black,
-                          fontSize: 40.0,
+                          fontSize: 16.0,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -65,18 +71,24 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
     );
   }
 
-  Future<void> processImage(InputImage inputImage, bool useClassifier) async {
+  Future<void> processImage(
+    InputImage inputImage,
+    bool useClassifier,
+    bool isActivity,
+  ) async {
     if (isBusy) return;
     isBusy = true;
     final poses = await poseDetector.processImage(
       inputImage: inputImage,
       useClassifier: widget.useClassifier,
+      isActivity: isActivity,
     );
 
     if (useClassifier) {
       poses.forEach((pose) {
         poseName = pose.name;
         poseAccuracy = pose.accuracy;
+        poseReps = pose.reps;
       });
     }
 

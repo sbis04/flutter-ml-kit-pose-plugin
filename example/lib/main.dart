@@ -56,6 +56,14 @@ class Home extends StatelessWidget {
                         ),
                         featureCompleted: true,
                       ),
+                      CustomCard(
+                        'Pose Detector Activity',
+                        PoseDetectorView(
+                          useClassifier: true,
+                          isActivity: true,
+                        ),
+                        featureCompleted: true,
+                      ),
                     ],
                   ),
                 ],
